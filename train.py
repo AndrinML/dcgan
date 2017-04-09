@@ -54,7 +54,8 @@ def main(_):
             for images in train_data.next_batch(FLAGS.batch_size):
                 d_loss, g_loss = dcgan_model.update_params(sess, images)
 
-            print("epoch: %3d" % epoch, "Discriminator loss %.4f" % d_loss, "Generator loss  %.4f" % g_loss)
+            msg = "epoch: %3d" % epoch + " Discriminator loss %.4f" % d_loss + " Generator loss  %.4f" % g_loss
+            checkpoint_saver.audit_loss(msg)
 
             dcgan_model.update_summaries(sess, images, epoch)
 
