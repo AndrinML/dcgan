@@ -4,14 +4,13 @@ import os
 import tensorflow as tf
 
 from dcgan import DCGAN
-from dcgan_vgg import DCGAN_VGG
 import hdf5_dataset
 from visualizer import ImageVisualizer
 
 flags = tf.app.flags
 
-flags.DEFINE_string("dataset", "datasets/tree_skel_all_6k_400_1v_64x64.h5", "sample data dir")
-flags.DEFINE_string("data_dir", "data/", "checkpoint and logging data dir")
+flags.DEFINE_string("dataset", "datasets/tree_skel_all_6k_400_1v_64x64.h5", "sample results dir")
+flags.DEFINE_string("data directory", "results/", "checkpoint and logging results dir")
 flags.DEFINE_integer("batch_size", 128, "batch size")
 flags.DEFINE_integer("image_size", 64, "image size")
 flags.DEFINE_integer("channels", 1, "color channels")
