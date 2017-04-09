@@ -123,7 +123,7 @@ class DCGAN:
         _ = sess.run([self.d_optim], feed_dict={self.x: input_tensor})
 
         # Update generator network
-        _ = sess.run([self.g_optim], feed_dict={self.x: input_tensor})
+        #_ = sess.run([self.g_optim], feed_dict={self.x: input_tensor})
 
         # Run generator twice to make sure that discriminator loss does not go to zero (different from paper)
         _ = sess.run([self.g_optim], feed_dict={self.x: input_tensor})
