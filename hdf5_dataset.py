@@ -115,7 +115,7 @@ def read_data_set(train_dir, image_size=64, shape=(64, 64), validation=1000, bin
         logger.info('shape: ' + str(shape))
         logger.info('image binarization: ' + str(binarized))
 
-    return Datasets(train=train, validation=validation), train_images.shape
+    return Datasets(train=train, validation=validation), train_images.shape[1:]
 
 
 def find_file(data_path, extensions):
