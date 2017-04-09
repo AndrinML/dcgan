@@ -10,18 +10,17 @@ import hdf5_dataset
 from checkpoint_saver import CheckpointSaver
 from visualizer import ImageVisualizer
 
-flags = tf.app.flags
 
-flags.DEFINE_string("dataset", "datasets/celeb_dataset_colored.h5", "sample results dir")
+flags = tf.app.flags
+flags.DEFINE_string("dataset", "datasets/celeb_dataset_3k_colored.h5", "sample results dir")
 flags.DEFINE_string("data_dir", "results/", "checkpoint and logging results dir")
 flags.DEFINE_integer("batch_size", 128, "batch size")
 flags.DEFINE_integer("image_size", 64, "image size")
 flags.DEFINE_integer("channels", 3, "color channels")
 flags.DEFINE_integer("max_epoch", 500, "max epoch")
-flags.DEFINE_integer("z_size", 256, "size of latent (feature?) space")
+flags.DEFINE_integer("z_size", 100, "size of latent (feature?) space")
 flags.DEFINE_float("learning_rate", 5e-4, "learning rate")
 flags.DEFINE_integer("generation_step", 1, "generate random images")
-
 FLAGS = flags.FLAGS
 
 
@@ -33,7 +32,7 @@ def main(_):
     checkpoint_saver.save_experiment_config(FLAGS.__dict__['__flags'])
 
     # load training data
-    data_set, data_set_shape = hdf5_dataset.read_data_set(FLAGS.dataset, image_size=FLAGS.image_size, shape=(FLAGS.image_size, FLAGS.image_size, FLAGS.channels), binarized=True, validation=0)
+    data_set, data_set_shape = hdf5_dataset.read_data_set(FLAGS.dataset, image_size=FLAGS.image_size, shape=(FLAGS.image_size, FLAGS.image_size, FLAGS.channels), binarized=False, validation=0)
     train_data = data_set.train
 
     # create a data visualizer
