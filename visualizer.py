@@ -1,6 +1,8 @@
 """
-    DRAW model visualizer
+Andrin Jenal, 2017
+ETH Zurich
 """
+
 
 import os
 import numpy as np

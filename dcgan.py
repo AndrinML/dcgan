@@ -1,6 +1,8 @@
 """
-Author: Andrin Jenal
+Andrin Jenal, 2017
+ETH Zurich
 """
+
 
 import tensorflow as tf
 import numpy as np

@@ -1,5 +1,6 @@
 """
-Author: Andrin Jenal
+Andrin Jenal, 2017
+ETH Zurich
 """
 
 from tensorflow.contrib import layers
@@ -56,10 +57,6 @@ def flatten_contrib(inputs):
 
 
 def clip_gradient_norms(gradients, clip_norm):
-    """
-        clip gradients with respect to L2-norm
-    """
-    # TODO: Figure out what "None" gradients indicate, I think it is not safe to just ignore them.
     for i, (g, v) in enumerate(gradients):
         if g is not None:
             gradients[i] = (tf.clip_by_norm(g, clip_norm), v)

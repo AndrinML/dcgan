@@ -1,3 +1,8 @@
+"""
+Andrin Jenal, 2017
+ETH Zurich
+"""
+
 import os
 import collections
 from scipy import misc
@@ -47,11 +52,10 @@ class HDF5_DataSet:
         return len(self.images)
 
 
-def get_normalized_image_data(image, image_size, shape):
-    #TODO make this method RGB compatible!
+def get_normalized_image_data(image, image_size, shape, target_range=(0,1)):
     img = misc.imresize(image, (image_size, image_size))
     img = np.asarray(img, dtype=np.float32)
-    img /= 255.0
+    img = (target_range[1] - target_range[0]) / 255.0 * img - target_range[0]
     img = np.reshape(img, shape)
     return img
 
@@ -111,7 +115,7 @@ def read_data_set(train_dir, image_size=64, shape=(64, 64), validation=1000, bin
         logger.info('shape: ' + str(shape))
         logger.info('image binarization: ' + str(binarized))
 
-    return Datasets(train=train, validation=validation)
+    return Datasets(train=train, validation=validation), train_images.shape
 
 
 def find_file(data_path, extensions):
