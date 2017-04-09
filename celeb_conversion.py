@@ -62,4 +62,4 @@ class CelebDataset:
 
 if __name__ == '__main__':
     c = CelebDataset("/home/ajenal/NeuralNetworks/dcgan-vgg/datasets/", image_size=64, channels=3)
-    c.create_dataset_from_zip("/home/ajenal/Downloads/img_align_celeba.zip", 3000, dataset_filename="celeb_dataset_colored.h5")
+    c.create_dataset_from_zip("/home/ajenal/Downloads/img_align_celeba.zip", 20000, dataset_filename="celeb_dataset_20k_colored.h5")
