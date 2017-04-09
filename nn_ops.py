@@ -7,6 +7,15 @@ from tensorflow.contrib import layers
 import tensorflow as tf
 
 
+def batch_norm_contrib(x):
+    return layers.batch_norm(x,
+                             decay=0.9,
+                             updates_collections=None,
+                             epsilon=1e-5,
+                             scale=True,
+                             scope="batch_norm")
+
+
 def leaky_relu(x, leak=0.2, name="lrelu"):
     with tf.variable_scope(name):
         f1 = 0.5 * (1 + leak)
@@ -19,11 +28,11 @@ def leaky_relu2(x, alpha=0.2):
 
 
 def leaky_relu_batch_norm(x, alpha=0.2):
-    return leaky_relu(layers.batch_norm(x, decay=0.9), alpha)
+    return leaky_relu(batch_norm_contrib(x), alpha)
 
 
 def relu_batch_norm(x):
-    return tf.nn.relu(layers.batch_norm(x, decay=0.9))
+    return tf.nn.relu(batch_norm_contrib(x))
 
 
 def linear(x, output_size, scope="linear", stddev=0.02):
