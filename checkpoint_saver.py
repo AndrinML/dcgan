@@ -10,17 +10,9 @@ import json
 
 
 class CheckpointSaver:
-    def __init__(self, checkpoint_dir):
-        # this is a not so beautiful way of creating unique directory names
-        experiment_number = 1
-        experiment_name = "DCGAN-%02d" % experiment_number
-        experiment_dir = os.path.join(checkpoint_dir, experiment_name)
-        while os.path.exists(experiment_dir):
-            experiment_number += 1
-            experiment_dir = os.path.join(checkpoint_dir, experiment_name)
-
+    def __init__(self, checkpoint_dir, experiment_name="DCGAN"):
         # checkpoint generation relevant parameters
-        self.experiment_name = experiment_name
+        self.experiment_name = experiment_name + "_" + strftime("%Y%m%d_%H%M%S")
         self.experiment_dir = os.path.join(checkpoint_dir, self.experiment_name)
         self.summary_dir = os.path.join(checkpoint_dir, self.experiment_name)
         self.last_epoch = 0
