@@ -18,11 +18,12 @@ class DCGAN:
         self.summary_writer = None
 
         self.image_size = image_size
+        self.image_channels = channels
         self.z_size = z_size
         self.learning_rate = learning_rate
         self.eps = 1e-8
 
-        self.x = tf.placeholder(tf.float32, shape=(None, image_size, image_size, channels))
+        self.x = tf.placeholder(tf.float32, shape=(None, self.image_size, self.image_size, self.image_channels))
         self.batch_size = tf.shape(self.x)[0]
         self.z = tf.random_normal((self.batch_size, self.z_size), mean=0, stddev=1)
 
@@ -56,7 +57,7 @@ class DCGAN:
                     self.g_optim = self._adam_optimizer(self.generator_loss, self.generator_vars, learning_rate)
 
     def _discriminator(self, x):
-        x = tf.reshape(x, [self.batch_size, self.image_size, self.image_size])
+        x = tf.reshape(x, [self.batch_size, self.image_size, self.image_size, self.image_channels])
         conv1 = nn_ops.conv2d_contrib(x, 64, kernel=4, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="conv1")
         conv2 = nn_ops.conv2d_contrib(conv1, 128, kernel=4, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="conv2")
         conv3 = nn_ops.conv2d_contrib(conv2, 256, kernel=4, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="conv3")
@@ -73,7 +74,7 @@ class DCGAN:
         deconv1 = nn_ops.conv2d_transpose_contrib(z, 512, kernel=4, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="upconv1")
         deconv2 = nn_ops.conv2d_transpose_contrib(deconv1, 256, kernel=5, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="upconv2")
         deconv3 = nn_ops.conv2d_transpose_contrib(deconv2, 128, kernel=5, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="upconv3")
-        deconv4 = nn_ops.conv2d_transpose_contrib(deconv3, 1, kernel=5, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="upconv4")
+        deconv4 = nn_ops.conv2d_transpose_contrib(deconv3, self.image_channels, kernel=5, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="upconv4")
         return deconv4
 
     def _discriminator_loss(self, eps=1e-8):
