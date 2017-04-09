@@ -52,10 +52,10 @@ class HDF5_DataSet:
         return len(self.images)
 
 
-def get_normalized_image_data(image, image_size, shape, target_range=(0,1)):
+def get_normalized_image_data(image, image_size, shape, target_range=(-1,1)):
     img = misc.imresize(image, (image_size, image_size))
     img = np.asarray(img, dtype=np.float32)
-    img = (target_range[1] - target_range[0]) / 255.0 * img - target_range[0]
+    img = img * (target_range[1] - target_range[0]) / 255.0 + target_range[0]
     img = np.reshape(img, shape)
     return img
 
