@@ -56,26 +56,26 @@ class DCGAN:
                 with tf.name_scope("generator_optimizer"):
                     self.g_optim = self._adam_optimizer(self.generator_loss, self.generator_vars, learning_rate)
 
+        self._check_tensors()
+
     def _discriminator(self, x):
         x = tf.reshape(x, [self.batch_size, self.image_size, self.image_size, self.image_channels])
-        conv1 = nn_ops.conv2d_contrib(x, 64, kernel=4, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="conv1")
-        conv2 = nn_ops.conv2d_contrib(conv1, 128, kernel=4, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="conv2")
-        conv3 = nn_ops.conv2d_contrib(conv2, 256, kernel=4, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="conv3")
-        conv4 = nn_ops.conv2d_contrib(conv3, 512, kernel=4, stride=2, padding="VALID", activation_fn=nn_ops.leaky_relu_batch_norm, scope="conv4")
-        conv4 = nn_ops.flatten_contrib(conv4)
-        fc = nn_ops.linear_contrib(conv4, 1024, activation_fn=nn_ops.leaky_relu_batch_norm, scope="fully_connected")
+        conv1 = nn_ops.conv2d_contrib(x, 64, kernel=5, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="conv1")
+        conv2 = nn_ops.conv2d_contrib(conv1, 128, kernel=3, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="conv2")
+        conv3 = nn_ops.conv2d_contrib(conv2, 256, kernel=3, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="conv3")
+        conv4 = nn_ops.conv2d_contrib(conv3, 512, kernel=3, stride=2, padding="VALID", activation_fn=None, scope="conv4")
+        fc = nn_ops.linear_contrib(conv4, 1024, activation_fn=None, scope="fully_connected")
         predicted = nn_ops.linear_contrib(fc, 1, activation_fn=tf.nn.sigmoid, scope="prediction")
         return predicted
 
     def _generator(self, z):
-        fc = nn_ops.linear_contrib(z, 4 * 4 * 1024, activation_fn=tf.nn.sigmoid)
+        fc = nn_ops.linear_contrib(z, 4 * 4 * 1024, activation_fn=None)
         z = tf.reshape(fc, shape=(tf.shape(z)[0], 4, 4, 1024))
-        z = nn_ops.leaky_relu_batch_norm(z)
-        deconv1 = nn_ops.conv2d_transpose_contrib(z, 512, kernel=4, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="upconv1")
-        deconv2 = nn_ops.conv2d_transpose_contrib(deconv1, 256, kernel=5, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="upconv2")
-        deconv3 = nn_ops.conv2d_transpose_contrib(deconv2, 128, kernel=5, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="upconv3")
-        deconv4 = nn_ops.conv2d_transpose_contrib(deconv3, self.image_channels, kernel=5, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="upconv4")
-        return deconv4
+        deconv1 = nn_ops.conv2d_transpose_contrib(z, 512, kernel=4, stride=2, activation_fn=tf.nn.relu, scope="upconv1")
+        deconv2 = nn_ops.conv2d_transpose_contrib(deconv1, 256, kernel=5, stride=2, activation_fn=tf.nn.relu, scope="upconv2")
+        deconv3 = nn_ops.conv2d_transpose_contrib(deconv2, 128, kernel=5, stride=2, activation_fn=tf.nn.relu, scope="upconv3")
+        deconv4 = nn_ops.conv2d_transpose_contrib(deconv3, self.image_channels, kernel=5, stride=2, activation_fn=None, scope="upconv4")
+        return tf.nn.tanh(deconv4)
 
     def _discriminator_loss(self, eps=1e-8):
         with tf.name_scope("discriminator_loss"):
@@ -112,6 +112,11 @@ class DCGAN:
 
     def _l2_norms(self, gradients):
         return [tf.nn.l2_loss(g) for g, v in gradients if g is not None]
+
+    def _check_tensors(self):
+        if tf.trainable_variables():
+            for v in tf.trainable_variables():
+                print("%s : %s" % (v.name, v.get_shape()))
 
     def update_params(self, sess, input_tensor):
         # Update discriminator network
