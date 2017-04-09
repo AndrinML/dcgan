@@ -12,11 +12,11 @@ from visualizer import ImageVisualizer
 
 flags = tf.app.flags
 
-flags.DEFINE_string("dataset", "datasets/tree_skel_all_1500_100_1v_64x64.h5", "sample results dir")
+flags.DEFINE_string("dataset", "datasets/celeb_dataset_colored.h5", "sample results dir")
 flags.DEFINE_string("data_dir", "results/", "checkpoint and logging results dir")
 flags.DEFINE_integer("batch_size", 128, "batch size")
 flags.DEFINE_integer("image_size", 64, "image size")
-flags.DEFINE_integer("channels", 1, "color channels")
+flags.DEFINE_integer("channels", 3, "color channels")
 flags.DEFINE_integer("max_epoch", 500, "max epoch")
 flags.DEFINE_integer("z_size", 256, "size of latent (feature?) space")
 flags.DEFINE_float("learning_rate", 5e-4, "learning rate")
