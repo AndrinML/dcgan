@@ -7,12 +7,23 @@ from tensorflow.contrib import layers
 import tensorflow as tf
 
 
-def leaky_relu(x, alpha=0.2):
+def leaky_relu(x, leak=0.2, name="lrelu"):
+    with tf.variable_scope(name):
+        f1 = 0.5 * (1 + leak)
+        f2 = 0.5 * (1 - leak)
+        return f1 * x + f2 * abs(x)
+
+
+def leaky_relu2(x, alpha=0.2):
     return tf.maximum(tf.minimum(0.0, alpha * x), x)
 
 
 def leaky_relu_batch_norm(x, alpha=0.2):
-    return leaky_relu(layers.batch_norm(x), alpha)
+    return leaky_relu(layers.batch_norm(x, decay=0.9), alpha)
+
+
+def relu_batch_norm(x):
+    return tf.nn.relu(layers.batch_norm(x, decay=0.9))
 
 
 def linear(x, output_size, scope="linear", stddev=0.02):
