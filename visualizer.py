@@ -34,6 +34,10 @@ class ImageVisualizer:
         self._save_image_matrix(image_matrix, name)
         print("generated and saved images...")
 
+    def save_transition_samples(self, sample_images, image_size, rows, cols, name="transition_samples"):
+        image_matrix = self._create_image_grid(self._reverse_tanh(sample_images), sample_images.shape[0], image_size, image_size, rows, cols, ypad=2, xpad=2)
+        self._save_image_matrix(image_matrix, name + ".png")
+
     def _create_image_grid(self, x, num_samples, image_height, image_width, rows, cols, ypad=0, xpad=0):
         imgs = np.reshape(x, (num_samples, image_height, image_width, -1))
         image_matrix = np.ones((rows * image_height + (1 + rows) * ypad, cols * image_width + (1 + cols) * xpad, imgs.shape[-1]))
