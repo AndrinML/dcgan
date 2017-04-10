@@ -33,11 +33,15 @@ class DCGAN:
                 self.generated_samples = self._generator(self.z)
 
             with tf.variable_scope("discriminator"):
-                self.dis_x = self._discriminator(self.x)
+                self.dis_x, dis_net = self._discriminator(self.x)
                 tf.summary.histogram("predicted_x_values", self.dis_x)
 
+                # summary for training discriminator
+                for layer in dis_net:
+                    tf.summary.histogram(layer + "_activations", dis_net[layer])
+
             with tf.variable_scope("discriminator", reuse=True):
-                self.dis_x_pred = self._discriminator(self.generated_samples)
+                self.dis_x_pred, _ = self._discriminator(self.generated_samples)
                 tf.summary.histogram("predicted_x_z_values", self.dis_x_pred)
 
             with tf.variable_scope("generator", reuse=True):
@@ -66,7 +70,8 @@ class DCGAN:
         conv4 = nn_ops.conv2d_contrib(conv3, 512, kernel=3, stride=2, padding="VALID", activation_fn=None, scope="conv4")
         fc = nn_ops.linear_contrib(conv4, 1024, activation_fn=None, scope="fully_connected")
         predicted = nn_ops.linear_contrib(fc, 1, activation_fn=tf.nn.sigmoid, scope="prediction")
-        return predicted
+        net = {"conv1": conv1, "conv2": conv2, "conv3": conv3, "conv4": conv4}
+        return predicted, net
 
     def _generator(self, z):
         fc = nn_ops.linear_contrib(z, 4 * 4 * 1024, activation_fn=None)
