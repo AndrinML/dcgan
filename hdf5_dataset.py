@@ -60,15 +60,15 @@ def get_normalized_image_data(image, image_size, shape, target_range=(-1,1)):
     return img
 
 
-def get_binarized_image_data(image, image_size, shape):
+def get_binarized_image_data(image, image_size, shape, target_range=(-1,1)):
     img = misc.imresize(image, (image_size, image_size))
     img = np.asarray(img, dtype=np.float32)
     img *= 255.0 / img.max()  # normalize between [0, 255]
     threshold = 255.0
     _true = img < threshold
     _false = img >= threshold
-    img[_true] = 1  # white tree
-    img[_false] = 0  # black background
+    img[_true] = target_range[1]  # white tree
+    img[_false] = target_range[0]  # black background
     return np.reshape(img, shape)
 
 
