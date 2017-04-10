@@ -22,6 +22,7 @@ flags.DEFINE_integer("max_epoch", 500, "max epoch")
 flags.DEFINE_integer("z_size", 100, "size of latent (feature?) space")
 flags.DEFINE_float("learning_rate", 5e-4, "learning rate")
 flags.DEFINE_integer("generation_step", 1, "generate random images")
+flags.DEFINE_integer("checkpoint_step", 10, "save checkpoints")
 FLAGS = flags.FLAGS
 
 
@@ -61,6 +62,9 @@ def main(_):
 
             if epoch % FLAGS.generation_step == 0:
                 visualizer.save_generated_samples(dcgan_model.generate_samples(sess, num_samples=200), epoch)
+
+            if epoch % FLAGS.checkpoint_step == 0:
+                checkpoint_saver.save_checkpoint(dcgan_model.saver, sess, epoch)
 
 if __name__ == '__main__':
     tf.app.run()

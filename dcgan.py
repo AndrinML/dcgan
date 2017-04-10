@@ -60,6 +60,9 @@ class DCGAN:
                 with tf.name_scope("generator_optimizer"):
                     self.g_optim = self._adam_optimizer(self.generator_loss, self.generator_vars, learning_rate)
 
+        # initialize saver
+        self.saver = tf.train.Saver([v for v in tf.global_variables() if "dcgan_model" in v.name])
+
         self._check_tensors()
 
     def _discriminator(self, x):
@@ -150,3 +153,7 @@ class DCGAN:
             summary = sess.run(self.merged_summary_op, feed_dict={self.x: x})
             self.summary_writer.add_summary(summary, global_step=epoch)
             print("updated summaries...")
+
+    def restore_model(self, sess, checkpoint_file):
+        self.saver.restore(sess, checkpoint_file)
+        print("model restored from:", checkpoint_file)
