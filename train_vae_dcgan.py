@@ -24,7 +24,7 @@ flags.DEFINE_float("learning_rate_enc", 5e-4, "learning rate")
 flags.DEFINE_float("learning_rate_gen", 5e-4, "learning rate")
 flags.DEFINE_float("learning_rate_dis", 5e-4, "learning rate")
 flags.DEFINE_integer("generation_step", 1, "generate random images")
-flags.DEFINE_integer("checkpoint_step", 50, "save checkpoints")
+flags.DEFINE_integer("checkpoint_step", 40, "save checkpoints")
 FLAGS = flags.FLAGS
 
 
@@ -34,9 +34,10 @@ def main(_):
     # audits the model progress to a log file
     checkpoint_saver = CheckpointSaver(FLAGS.data_dir, experiment_name="VAE_DCGAN")
     checkpoint_saver.save_experiment_config(FLAGS.__dict__['__flags'])
+    checkpoint_saver.audit_model_parameters(FLAGS.__dict__['__flags'])
 
     # load training data
-    data_set, data_set_shape = hdf5_dataset.read_data_set(FLAGS.dataset, image_size=FLAGS.image_size, shape=(FLAGS.image_size, FLAGS.image_size, FLAGS.channels), binarized=FLAGS.binarized, validation=0)
+    data_set, data_set_shape = hdf5_dataset.read_data_set(FLAGS.dataset, image_size=FLAGS.image_size, shape=(FLAGS.image_size, FLAGS.image_size, FLAGS.channels), binarized=FLAGS.binarized, validation=0, normalization_range=(-1,1))
     train_data = data_set.train
 
     # create a data visualizer
