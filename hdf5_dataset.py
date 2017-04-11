@@ -60,7 +60,7 @@ def get_normalized_image_data(image, image_size, shape, target_range=(-1,1)):
     return img
 
 
-def get_binarized_image_data(image, image_size, shape, target_range=(-1,1)):
+def get_binarized_image_data(image, image_size, shape, target_range):
     img = misc.imresize(image, (image_size, image_size))
     img = np.asarray(img, dtype=np.float32)
     img *= 255.0 / img.max()  # normalize between [0, 255]
@@ -72,11 +72,11 @@ def get_binarized_image_data(image, image_size, shape, target_range=(-1,1)):
     return np.reshape(img, shape)
 
 
-def load_dataset(hdf5_file, image_size, shape, normalization):
+def load_dataset(hdf5_file, image_size, shape, normalization, normalization_range):
     res = []
     with h5py.File(hdf5_file, 'r') as _file:
         for ds in _file[_file.name]:
-            res.append(normalization(_file[ds].value, image_size=image_size, shape=shape))
+            res.append(normalization(_file[ds].value, image_size=image_size, shape=shape, target_range=normalization_range))
     return np.array(res)
 
 
@@ -85,12 +85,12 @@ def load_dataset_list(hdf5_file):
         return [ds for ds in _file[_file.name]]
 
 
-def read_data_set(train_dir, image_size=64, shape=(64, 64), validation=1000, binarized=False, logger=None):
+def read_data_set(train_dir, image_size=64, shape=(64, 64), normalization_range=(0,1), validation=1000, binarized=False, logger=None):
     h5_file = find_file(train_dir, extensions=['.hdf5', '.h5'])
     if binarized and shape[-1] == 1:
-        images = load_dataset(h5_file, image_size, shape, get_binarized_image_data)
+        images = load_dataset(h5_file, image_size, shape, get_binarized_image_data, normalization_range)
     else:
-        images = load_dataset(h5_file, image_size, shape, get_normalized_image_data)
+        images = load_dataset(h5_file, image_size, shape, get_normalized_image_data, normalization_range)
 
     shuffle_index = np.arange(images.shape[0])
     np.random.shuffle(shuffle_index)
