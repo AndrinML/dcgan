@@ -34,14 +34,15 @@ class VAE_DCGAN:
         with tf.variable_scope("vae_dcgan_model"):
 
             with tf.variable_scope("encoder"):
-                self.z_x_mean, self.z_x_log_sigma_sq = self._encoder(self.x)
+                self.z_x_mean, self.z_x_log_sigma = self._encoder(self.x)
 
             with tf.variable_scope("generator"):
-                self.z_x = tf.add(self.z_x_mean, tf.multiply(tf.sqrt(tf.exp(self.z_x_log_sigma_sq)), self.eps))
+                self.z_x = tf.add(self.z_x_mean, tf.multiply(tf.exp(self.z_x_log_sigma), self.eps))
                 self.x_tilde = self._generator(self.z_x)
 
             with tf.variable_scope("discriminator"):
-                _, self.l_x_tilde = self._discriminator(self.x_tilde)
+                self.dis_x_tilde_p, self.l_x_tilde = self._discriminator(self.x_tilde)
+                tf.summary.histogram("predicted_x_tilde_values", self.dis_x_tilde_p)
 
             with tf.variable_scope("generator", reuse=True):
                 self.x_p = self._generator(self.z_p)
@@ -51,8 +52,8 @@ class VAE_DCGAN:
                 tf.summary.histogram("predicted_x_values", self.dis_x)
 
             with tf.variable_scope("discriminator", reuse=True):
-                self.dix_x_p, _ = self._discriminator(self.x_p)
-                tf.summary.histogram("predicted_x_p_values", self.dix_x_p)
+                self.dis_x_p, _ = self._discriminator(self.x_p)
+                tf.summary.histogram("predicted_x_p_values", self.dis_x_p)
 
             with tf.variable_scope("losses"):
                 self.prior = self._kl_divergence()
@@ -97,8 +98,8 @@ class VAE_DCGAN:
         conv3 = nn_ops.conv2d_contrib(conv2, 256, kernel=3, stride=2, padding="VALID", activation_fn=nn_ops.relu_batch_norm, scope="conv3")
         flatten = nn_ops.flatten_contrib(conv3)
         z_mean = nn_ops.linear_contrib(flatten, self.z_size, activation_fn=None, scope="fully_connected")
-        z_log_sigma_sq = nn_ops.linear_contrib(flatten, self.z_size, activation_fn=None, scope="fully_connected")
-        return z_mean, z_log_sigma_sq
+        z_log_sigma = nn_ops.linear_contrib(flatten, self.z_size, activation_fn=None, scope="fully_connected")
+        return z_mean, z_log_sigma
 
     def _discriminator(self, x):
         x = tf.reshape(x, [self.batch_size, self.image_size, self.image_size, self.image_channels])
@@ -118,26 +119,28 @@ class VAE_DCGAN:
         deconv2 = nn_ops.conv2d_transpose_contrib(deconv1, 256, kernel=5, stride=2, activation_fn=tf.nn.relu, scope="upconv2")
         deconv3 = nn_ops.conv2d_transpose_contrib(deconv2, 128, kernel=5, stride=2, activation_fn=tf.nn.relu, scope="upconv3")
         deconv4 = nn_ops.conv2d_transpose_contrib(deconv3, self.image_channels, kernel=5, stride=2, activation_fn=None, scope="upconv4")
-        return tf.nn.tanh(deconv4)
+        # map to [0,2] with shifted and scaled sigmoid: 1 / (0.5 + exp(2.0 - 6 * x))
+        return tf.nn.tanh(deconv4)  # tf.divide(tf.constant(1.0), tf.add(tf.constant(0.5), tf.exp(tf.add(tf.constant(2.0), tf.multiply(tf.constant(-6.0), deconv4)))))
 
     def _discriminator_loss(self, eps=1e-8):
         with tf.name_scope("discriminator_loss"):
             dis_loss = tf.reduce_mean(-1.0 * tf.log(tf.clip_by_value(self.dis_x, eps, 1.0)) -
-                                      tf.log(tf.clip_by_value(1.0 - self.dix_x_p, eps, 1.0)))
+                                      tf.log(tf.clip_by_value(1.0 - self.dis_x_p, eps, 1.0)))
             tf.summary.scalar("discriminator_loss_mean", dis_loss)
             return dis_loss
 
     def _generator_loss(self, eps=1e-8):
         with tf.name_scope("generator_loss"):
-            gen_loss = tf.reduce_mean(-1.0 * tf.log(tf.clip_by_value(self.dix_x_p, eps, 1.0)))
+            gen_loss = tf.reduce_mean(-1.0 * tf.log(tf.clip_by_value(self.dis_x_p, eps, 1.0)))
             tf.summary.scalar("generator_loss_mean", gen_loss)
             return gen_loss
 
     def _kl_divergence(self):
         with tf.name_scope("kl_divergence_loss"):
-            KL = (-0.5 * tf.reduce_sum(1 + tf.clip_by_value(self.z_x_log_sigma_sq, -10.0, 10.0) -
-                                                      tf.square(tf.clip_by_value(self.z_x_mean, -10.0, 10.0)) -
-                                                      tf.exp(tf.clip_by_value(self.z_x_log_sigma_sq, -10.0, 10.0)), 1)) / (self.image_size * self.image_size)
+            """KL = (-0.5 * tf.reduce_sum(1 + tf.clip_by_value(self.z_x_log_sigma, -10.0, 10.0) -
+                                       tf.square(tf.clip_by_value(self.z_x_mean, -10.0, 10.0)) -
+                                       tf.exp(tf.clip_by_value(self.z_x_log_sigma, -10.0, 10.0)), 1)) / (self.image_size * self.image_size)"""
+            KL = tf.reduce_sum((-self.z_x_log_sigma + 0.5 * (tf.exp(2.0 * self.z_x_log_sigma) + tf.square(self.z_x_mean)) - 0.5), axis=-1)
             KL_mean = tf.reduce_mean(KL)
             tf.summary.histogram("KL_divergence", KL)
             tf.summary.scalar("kl_divergence_mean", KL_mean)
@@ -151,23 +154,24 @@ class VAE_DCGAN:
 
     def _wasserstein_discriminator_loss(self):
         with tf.name_scope("discriminator_loss"):
-            dis_loss = tf.reduce_mean(self.dis_x - self.dix_x_p)
+            dis_loss = tf.reduce_mean(self.dis_x - self.dis_x_p)
             tf.summary.scalar("discriminator_loss_mean", dis_loss)
             return dis_loss
 
     def _wasserstein_decoder_loss(self):
         with tf.name_scope("decoder_loss"):
-            gen_loss = tf.reduce_mean(self.dix_x_p)
+            gen_loss = tf.reduce_mean(self.dis_x_p)
             tf.summary.scalar("decoder_loss_mean", gen_loss)
             return gen_loss
 
     def _adam_optimizer(self, loss, loss_params, learning_rate, beta1=0.5):
-        optimizer_dis = tf.train.AdamOptimizer(learning_rate, beta1=beta1)
-        grads_dis = optimizer_dis.compute_gradients(loss, var_list=loss_params)
-        train_dis = optimizer_dis.apply_gradients(grads_dis)
-        grad_norms = self._l2_norms(grads_dis)
+        optimizer = tf.train.AdamOptimizer(learning_rate, beta1=beta1)
+        grads = optimizer.compute_gradients(loss, var_list=loss_params)
+        grads = nn_ops.clip_gradient_norms(grads, 10)
+        train_optimizer = optimizer.apply_gradients(grads)
+        grad_norms = self._l2_norms(grads)
         tf.summary.histogram("gradient_l2_norms", grad_norms)
-        return train_dis
+        return train_optimizer
 
     def _l2_norms(self, gradients):
         return [tf.nn.l2_loss(g) for g, v in gradients if g is not None]
