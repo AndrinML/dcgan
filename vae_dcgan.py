@@ -41,13 +41,13 @@ class VAE_DCGAN:
                 self.x_tilde = self._generator(self.z_x)
 
             with tf.variable_scope("discriminator"):
-                _, l_x_tilde = self._discriminator(self.x_tilde)
+                _, self.l_x_tilde = self._discriminator(self.x_tilde)
 
             with tf.variable_scope("generator", reuse=True):
                 self.x_p = self._generator(self.z_p)
 
             with tf.variable_scope("discriminator", reuse=True):
-                self.dis_x, l_x = self._discriminator(self.x)
+                self.dis_x, self.l_x = self._discriminator(self.x)
                 tf.summary.histogram("predicted_x_values", self.dis_x)
 
             with tf.variable_scope("discriminator", reuse=True):
@@ -55,13 +55,11 @@ class VAE_DCGAN:
                 tf.summary.histogram("predicted_x_p_values", self.dix_x_p)
 
             with tf.variable_scope("losses"):
-                self.prior = tf.reduce_sum(-0.5 * tf.reduce_sum(1 + tf.clip_by_value(self.z_x_log_sigma_sq, -10.0, 10.0) -
-                                                                tf.square(tf.clip_by_value(self.z_x_mean, -10.0, 10.0)) -
-                                                                tf.exp(tf.clip_by_value(self.z_x_log_sigma_sq, -10.0, 10.0)), 1)) / (self.image_size * self.image_size)
+                self.prior = self._kl_divergence()
 
                 self.discriminator_loss = self._discriminator_loss()
                 self.generator_loss = self._generator_loss()
-                self.lth_layer_loss = tf.nn.l2_loss((l_x - l_x_tilde)) / (self.image_size * self.image_size * self.image_channels)
+                self.lth_layer_loss = self._lth_layer_loss()
 
                 self.loss_encoder = self.prior + self.lth_layer_loss
                 self.loss_generator = self.lth_layer_loss + self.generator_loss
@@ -134,6 +132,22 @@ class VAE_DCGAN:
             gen_loss = tf.reduce_mean(-1.0 * tf.log(tf.clip_by_value(self.dix_x_p, eps, 1.0)))
             tf.summary.scalar("generator_loss_mean", gen_loss)
             return gen_loss
+
+    def _kl_divergence(self):
+        with tf.name_scope("kl_divergence_loss"):
+            KL = (-0.5 * tf.reduce_sum(1 + tf.clip_by_value(self.z_x_log_sigma_sq, -10.0, 10.0) -
+                                                      tf.square(tf.clip_by_value(self.z_x_mean, -10.0, 10.0)) -
+                                                      tf.exp(tf.clip_by_value(self.z_x_log_sigma_sq, -10.0, 10.0)), 1)) / (self.image_size * self.image_size)
+            KL_mean = tf.reduce_mean(KL)
+            tf.summary.histogram("KL_divergence", KL)
+            tf.summary.scalar("kl_divergence_mean", KL_mean)
+            return KL_mean
+
+    def _lth_layer_loss(self):
+        with tf.name_scope("lth_layer_loss"):
+            lth_layer_loss = tf.nn.l2_loss((self.l_x - self.l_x_tilde)) / (self.image_size * self.image_size * self.image_channels)
+            tf.summary.scalar("lth_layer_loss_mean", lth_layer_loss)
+            return lth_layer_loss
 
     def _wasserstein_discriminator_loss(self):
         with tf.name_scope("discriminator_loss"):
