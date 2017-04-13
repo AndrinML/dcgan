@@ -172,7 +172,7 @@ class VAE_DCGAN:
     def _kl_divergence(self):
         with tf.name_scope("kl_divergence_loss"):
             KL = tf.reduce_sum((-self.z_x_log_sigma + 0.5 * (tf.exp(2.0 * self.z_x_log_sigma) + tf.square(self.z_x_mean)) - 0.5), axis=-1)
-            KL_mean = tf.reduce_mean(KL)
+            KL_mean = tf.reduce_mean(tf.clip_by_value(KL, -500, 500))
             tf.summary.histogram("KL_divergence", KL)
             tf.summary.scalar("kl_divergence_mean", KL_mean)
             return KL_mean
