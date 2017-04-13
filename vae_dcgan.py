@@ -32,13 +32,19 @@ class VAE_DCGAN:
         self.eps = tf.random_normal((self.batch_size, self.z_size), mean=0, stddev=1)
 
         with tf.variable_scope("vae_dcgan_model"):
+            tf.summary.histogram("x_values", self.x)
 
             with tf.variable_scope("encoder"):
                 self.z_x_mean, self.z_x_log_sigma = self._encoder(self.x)
 
             with tf.variable_scope("generator"):
                 self.z_x = tf.add(self.z_x_mean, tf.multiply(tf.exp(self.z_x_log_sigma), self.eps))
+                tf.summary.histogram("z", tf.reduce_mean(self.z_x, axis=1))
+                tf.summary.histogram("z_mu", tf.reduce_mean(self.z_x_mean, axis=1))
+                tf.summary.histogram("z_sigma", tf.reduce_mean(self.z_x_log_sigma, axis=1))
+
                 self.x_tilde = self._generator(self.z_x)
+                tf.summary.histogram("x_tilde_values", self.x_tilde)
 
             with tf.variable_scope("discriminator"):
                 self.dis_x_tilde_p, self.l_x_tilde = self._discriminator(self.x_tilde)
@@ -46,6 +52,7 @@ class VAE_DCGAN:
 
             with tf.variable_scope("generator", reuse=True):
                 self.x_p = self._generator(self.z_p)
+                tf.summary.histogram("x_p_values", self.x_tilde)
 
             with tf.variable_scope("discriminator", reuse=True):
                 self.dis_x, self.l_x = self._discriminator(self.x)
