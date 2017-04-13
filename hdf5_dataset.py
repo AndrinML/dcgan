@@ -85,7 +85,7 @@ def load_dataset_list(hdf5_file):
         return [ds for ds in _file[_file.name]]
 
 
-def read_data_set(train_dir, image_size=64, shape=(64, 64), normalization_range=(0,1), validation=1000, binarized=False, logger=None):
+def read_data_set(train_dir, image_size=64, shape=(64, 64), normalization_range=(-1,1), validation=1000, binarized=False, logger=None):
     h5_file = find_file(train_dir, extensions=['.hdf5', '.h5'])
     if binarized and shape[-1] == 1:
         images = load_dataset(h5_file, image_size, shape, get_binarized_image_data, normalization_range)
