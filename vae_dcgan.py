@@ -68,8 +68,8 @@ class VAE_DCGAN:
             with tf.variable_scope("losses"):
                 self.prior = self._kl_divergence()
 
-                self.discriminator_loss = self._wasserstein_discriminator_loss()  # self._discriminator_loss()
-                self.generator_loss = self._wasserstein_generator_loss()  # self._generator_loss()
+                self.discriminator_loss = self._wasserstein_discriminator_loss()
+                self.generator_loss = self._wasserstein_generator_loss()
                 self.lth_layer_loss = self._lth_layer_loss()
 
                 self.loss_encoder = self.prior + self.lth_layer_loss
@@ -85,10 +85,10 @@ class VAE_DCGAN:
                     self.e_optim = self._adam_optimizer(self.loss_encoder, self.encoder_vars, self.learning_rate_enc)
 
                 with tf.name_scope("discriminator_optimizer"):
-                    self.d_optim = self._adam_optimizer(self.loss_discriminator, self.discriminator_vars, self.learning_rate_dis)
+                    self.d_optim = self._rms_prop_optimizer(self.loss_discriminator, self.discriminator_vars, self.learning_rate_dis)
 
                 with tf.name_scope("generator_optimizer"):
-                    self.g_optim = self._adam_optimizer(self.loss_generator, self.generator_vars, self.learning_rate_gen)
+                    self.g_optim = self._rms_prop_optimizer(self.loss_generator, self.generator_vars, self.learning_rate_gen)
 
         # initialize saver
         self.saver = tf.train.Saver([v for v in tf.global_variables() if "vae_dcgan_model" in v.name])
@@ -106,7 +106,11 @@ class VAE_DCGAN:
 
     def _rms_prop_optimizer(self, loss, loss_params, learning_rate):
         optimizer = tf.train.RMSPropOptimizer(learning_rate)
-        train_optimizer = optimizer.minimize(loss, var_list=loss_params)
+        grads = optimizer.compute_gradients(loss, var_list=loss_params)
+        grads = nn_ops.clip_gradient_norms(grads, 10)
+        train_optimizer = optimizer.apply_gradients(grads)
+        grad_norms = self._l2_norms(grads)
+        tf.summary.histogram("gradient_l2_norms", grad_norms)
         return train_optimizer
 
     def _l2_norms(self, gradients):
@@ -194,15 +198,17 @@ class VAE_DCGAN:
             return gen_loss
 
     def _wasserstein_discriminator_loss(self):
+        """ https://github.com/igul222/improved_wgan_training/blob/master/gan_mnist.py """
         with tf.name_scope("discriminator_loss"):
             dis_loss = -tf.reduce_mean(self.dis_x) + tf.reduce_mean(self.dis_x_p) + tf.reduce_mean(self.dis_x_tilde_p)
             tf.summary.scalar("discriminator_loss_mean", dis_loss)
             return dis_loss
 
     def _wasserstein_generator_loss(self):
-        with tf.name_scope("decoder_loss"):
+        """ https://github.com/igul222/improved_wgan_training/blob/master/gan_mnist.py """
+        with tf.name_scope("generator_loss"):
             gen_loss = -tf.reduce_mean(self.dis_x_p) - tf.reduce_mean(self.dis_x_tilde_p)
-            tf.summary.scalar("decoder_loss_mean", gen_loss)
+            tf.summary.scalar("generator_loss_mean", gen_loss)
             return gen_loss
 
     def _vgg_feature_loss(self):
