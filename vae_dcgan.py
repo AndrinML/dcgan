@@ -195,13 +195,13 @@ class VAE_DCGAN:
 
     def _wasserstein_discriminator_loss(self):
         with tf.name_scope("discriminator_loss"):
-            dis_loss = tf.reduce_mean(self.dis_x - self.dis_x_p - self.dis_x_tilde_p)
+            dis_loss = -tf.reduce_mean(self.dis_x) + tf.reduce_mean(self.dis_x_p) + tf.reduce_mean(self.dis_x_tilde_p)
             tf.summary.scalar("discriminator_loss_mean", dis_loss)
             return dis_loss
 
     def _wasserstein_generator_loss(self):
         with tf.name_scope("decoder_loss"):
-            gen_loss = tf.reduce_mean(self.dis_x_p + self.dis_x_tilde_p)
+            gen_loss = -tf.reduce_mean(self.dis_x_p) - tf.reduce_mean(self.dis_x_tilde_p)
             tf.summary.scalar("decoder_loss_mean", gen_loss)
             return gen_loss
 
