@@ -8,7 +8,7 @@ import tensorflow as tf
 import numpy as np
 
 import nn_ops
-
+from vgg import vgg
 
 class VAE_DCGAN:
 
@@ -30,6 +30,9 @@ class VAE_DCGAN:
 
         self.z_p = tf.random_normal((self.batch_size, self.z_size), mean=0, stddev=1)
         self.eps = tf.random_normal((self.batch_size, self.z_size), mean=0, stddev=1)
+
+        # preload vgg network for loss backpropagation
+        self.vgg_weights, self.vgg_mean_pixel = vgg.load_net("datasets/imagenet-vgg-verydeep-19.mat")
 
         with tf.variable_scope("vae_dcgan_model"):
             tf.summary.histogram("x_values", self.x)
@@ -181,6 +184,35 @@ class VAE_DCGAN:
             gen_loss = tf.reduce_mean(self.dis_x_p + self.dis_x_tilde_p)
             tf.summary.scalar("decoder_loss_mean", gen_loss)
             return gen_loss
+
+    def _vgg_feature_loss(self):
+        with tf.name_scope("feature_loss_vgg"):
+            feature_layers = ["relu3_4"]
+            # [0.22591736, 0.77408264]
+            # [0.09079630, 0.33333333, 0.57587037]
+            # [0.04912966, 0.16162175, 0.33837825, 0.45087034]
+            # [0.03139669, 0.09036695, 0.20000000, 0.30963305, 0.36860331]
+            # [0.02222448, 0.05677295, 0.12367752, 0.20965582, 0.27656038, 0.31110886]
+            # [0.01683352, 0.03891270, 0.08120526, 0.14285714, 0.20450902, 0.24680159, 0.26888077]
+            # [0.01336953, 0.02844961, 0.05647934, 0.09969787, 0.15030213, 0.19352066, 0.22155039, 0.23663047]
+            feature_weights = [1.0]
+            feature_losses = []
+            for ith, layer in enumerate(feature_layers):
+                x_weights, _ = self._vgg_layer_weights(self.x, layer, self.batch_size, self.image_height, self.image_width, self.vgg_weights, self.vgg_mean_pixel)
+                x_tilde_weights, x_tilde_size = self._vgg_layer_weights(self.x_tilde, layer, self.batch_size, self.image_height, self.image_width, self.vgg_weights, self.vgg_mean_pixel)
+                feature_losses.append(feature_weights[ith] * (tf.nn.l2_loss(x_weights - x_tilde_weights) / x_tilde_size))
+            feature_loss = tf.reduce_mean(tf.convert_to_tensor(feature_losses))
+            feature_loss_weighted = self.feature_loss_weight * feature_loss
+            tf.summary.scalar("feature_loss_mean", feature_loss_weighted)
+            return feature_loss_weighted
+
+    def _vgg_layer_weights(self, input_images, layer_name, batch_size, image_height, image_width, vgg_weights, vgg_mean_pixel, pooling="avg"):
+        input_images = tf.reshape(input_images, shape=[batch_size, image_height, image_width])
+        input_images = tf.stack([input_images, input_images, input_images], axis=-1)
+        input_images_mean = vgg.preprocess(input_images, vgg_mean_pixel)
+        net_forward_images = vgg.net_preloaded(vgg_weights, input_images_mean, pooling)
+        weights_size = np.prod(net_forward_images[layer_name].get_shape().as_list()[1:])
+        return net_forward_images[layer_name], weights_size
 
     def _check_tensors(self):
         if tf.trainable_variables():
