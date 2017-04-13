@@ -104,6 +104,11 @@ class VAE_DCGAN:
         tf.summary.histogram("gradient_l2_norms", grad_norms)
         return train_optimizer
 
+    def _rms_prop_optimizer(self, loss, loss_params, learning_rate):
+        optimizer = tf.train.RMSPropOptimizer(learning_rate)
+        train_optimizer = optimizer.minimize(loss, var_list=loss_params)
+        return train_optimizer
+
     def _l2_norms(self, gradients):
         return [tf.nn.l2_loss(g) for g, v in gradients if g is not None]
 
