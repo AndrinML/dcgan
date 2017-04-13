@@ -174,6 +174,20 @@ class VAE_DCGAN:
             tf.summary.scalar("lth_layer_loss_mean", lth_layer_loss)
             return lth_layer_loss
 
+    def _discriminator_binary_cross_entropy_loss(self):
+        with tf.name_scope("discriminator_loss"):
+            d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.dis_x, labels=tf.ones_like(self.dis_x)))
+            d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.dis_x_p, labels=tf.zeros_like(self.dis_x_p)))
+            dis_loss = d_loss_real + d_loss_fake
+            tf.summary.scalar("discriminator_loss_mean", dis_loss)
+            return dis_loss
+
+    def _generator_binary_cross_entropy_loss(self):
+        with tf.name_scope("generator_loss"):
+            gen_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.dis_x_p, labels=tf.ones_like(self.dis_x_p)))
+            tf.summary.scalar("generator_loss_mean", gen_loss)
+            return gen_loss
+
     def _wasserstein_discriminator_loss(self):
         with tf.name_scope("discriminator_loss"):
             dis_loss = tf.reduce_mean(self.dis_x - self.dis_x_p - self.dis_x_tilde_p)
