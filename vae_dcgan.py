@@ -42,9 +42,9 @@ class VAE_DCGAN:
 
             with tf.variable_scope("generator"):
                 self.z_x = tf.add(self.z_x_mean, tf.multiply(tf.exp(self.z_x_log_sigma), self.eps))
-                tf.summary.histogram("z", tf.reduce_mean(self.z_x, axis=1))
-                tf.summary.histogram("z_mu", tf.reduce_mean(self.z_x_mean, axis=1))
-                tf.summary.histogram("z_sigma", tf.reduce_mean(self.z_x_log_sigma, axis=1))
+                tf.summary.histogram("z", self.z_x)
+                tf.summary.histogram("z_mu", self.z_x_mean)
+                tf.summary.histogram("z_sigma", tf.exp(self.z_x_log_sigma))
 
                 self.x_tilde = self._generator(self.z_x)
                 tf.summary.histogram("x_tilde_values", self.x_tilde)
