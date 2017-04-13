@@ -10,6 +10,7 @@ import numpy as np
 import nn_ops
 from vgg import vgg
 
+
 class VAE_DCGAN:
 
     def __init__(self, image_size, channels, z_size=256, learning_rate_enc=5e-4, learning_rate_dis=5e-4, learning_rate_dec=5e-4):
