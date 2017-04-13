@@ -199,17 +199,20 @@ class VAE_DCGAN:
             feature_weights = [1.0]
             feature_losses = []
             for ith, layer in enumerate(feature_layers):
-                x_weights, _ = self._vgg_layer_weights(self.x, layer, self.batch_size, self.image_height, self.image_width, self.vgg_weights, self.vgg_mean_pixel)
-                x_tilde_weights, x_tilde_size = self._vgg_layer_weights(self.x_tilde, layer, self.batch_size, self.image_height, self.image_width, self.vgg_weights, self.vgg_mean_pixel)
+                x_weights, _ = self._vgg_layer_weights(self.x, layer, self.batch_size, self.image_size, self.image_size, self.vgg_weights, self.vgg_mean_pixel)
+                x_tilde_weights, x_tilde_size = self._vgg_layer_weights(self.x_tilde, layer, self.batch_size, self.image_size, self.image_size, self.vgg_weights, self.vgg_mean_pixel)
                 feature_losses.append(feature_weights[ith] * (tf.nn.l2_loss(x_weights - x_tilde_weights) / x_tilde_size))
             feature_loss = tf.reduce_mean(tf.convert_to_tensor(feature_losses))
-            feature_loss_weighted = self.feature_loss_weight * feature_loss
+            feature_loss_weighted = feature_loss
             tf.summary.scalar("feature_loss_mean", feature_loss_weighted)
             return feature_loss_weighted
 
     def _vgg_layer_weights(self, input_images, layer_name, batch_size, image_height, image_width, vgg_weights, vgg_mean_pixel, pooling="avg"):
-        input_images = tf.reshape(input_images, shape=[batch_size, image_height, image_width])
-        input_images = tf.stack([input_images, input_images, input_images], axis=-1)
+        if self.image_channels == 3:
+            input_images = tf.reshape(input_images, shape=[batch_size, image_height, image_width, self.image_channels])
+        else:
+            input_images = tf.reshape(input_images, shape=[batch_size, image_height, image_width])
+            input_images = tf.stack([input_images, input_images, input_images], axis=-1)
         input_images_mean = vgg.preprocess(input_images, vgg_mean_pixel)
         net_forward_images = vgg.net_preloaded(vgg_weights, input_images_mean, pooling)
         weights_size = np.prod(net_forward_images[layer_name].get_shape().as_list()[1:])
