@@ -58,8 +58,8 @@ class VAE_DCGAN:
             with tf.variable_scope("losses"):
                 self.prior = self._kl_divergence()
 
-                self.discriminator_loss = self._discriminator_loss()
-                self.generator_loss = self._generator_loss()
+                self.discriminator_loss = self._wasserstein_discriminator_loss()  # self._discriminator_loss()
+                self.generator_loss = self._wasserstein_generator_loss()  # self._generator_loss()
                 self.lth_layer_loss = self._lth_layer_loss()
 
                 self.loss_encoder = self.prior + self.lth_layer_loss
@@ -84,6 +84,18 @@ class VAE_DCGAN:
         self.saver = tf.train.Saver([v for v in tf.global_variables() if "vae_dcgan_model" in v.name])
 
         self._check_tensors()
+
+    def _adam_optimizer(self, loss, loss_params, learning_rate, beta1=0.5):
+        optimizer = tf.train.AdamOptimizer(learning_rate, beta1=beta1)
+        grads = optimizer.compute_gradients(loss, var_list=loss_params)
+        grads = nn_ops.clip_gradient_norms(grads, 10)
+        train_optimizer = optimizer.apply_gradients(grads)
+        grad_norms = self._l2_norms(grads)
+        tf.summary.histogram("gradient_l2_norms", grad_norms)
+        return train_optimizer
+
+    def _l2_norms(self, gradients):
+        return [tf.nn.l2_loss(g) for g, v in gradients if g is not None]
 
     def _encoder2(self, x):
         x = tf.reshape(x, [self.batch_size, self.image_size * self.image_size * self.image_channels])
@@ -125,21 +137,20 @@ class VAE_DCGAN:
     def _discriminator_loss(self, eps=1e-8):
         with tf.name_scope("discriminator_loss"):
             dis_loss = tf.reduce_mean(-1.0 * tf.log(tf.clip_by_value(self.dis_x, eps, 1.0)) -
-                                      tf.log(tf.clip_by_value(1.0 - self.dis_x_p, eps, 1.0)))
+                                      tf.log(tf.clip_by_value(1.0 - self.dis_x_p, eps, 1.0)) -
+                                      tf.log(tf.clip_by_value(1.0 - self.dis_x_tilde_p, eps, 1.0)))
             tf.summary.scalar("discriminator_loss_mean", dis_loss)
             return dis_loss
 
     def _generator_loss(self, eps=1e-8):
         with tf.name_scope("generator_loss"):
-            gen_loss = tf.reduce_mean(-1.0 * tf.log(tf.clip_by_value(self.dis_x_p, eps, 1.0)))
+            gen_loss = tf.reduce_mean(-1.0 * tf.log(tf.clip_by_value(self.dis_x_p, eps, 1.0)) -
+                                      tf.log(tf.clip_by_value(self.dis_x_tilde_p, eps, 1.0)))
             tf.summary.scalar("generator_loss_mean", gen_loss)
             return gen_loss
 
     def _kl_divergence(self):
         with tf.name_scope("kl_divergence_loss"):
-            """KL = (-0.5 * tf.reduce_sum(1 + tf.clip_by_value(self.z_x_log_sigma, -10.0, 10.0) -
-                                       tf.square(tf.clip_by_value(self.z_x_mean, -10.0, 10.0)) -
-                                       tf.exp(tf.clip_by_value(self.z_x_log_sigma, -10.0, 10.0)), 1)) / (self.image_size * self.image_size)"""
             KL = tf.reduce_sum((-self.z_x_log_sigma + 0.5 * (tf.exp(2.0 * self.z_x_log_sigma) + tf.square(self.z_x_mean)) - 0.5), axis=-1)
             KL_mean = tf.reduce_mean(KL)
             tf.summary.histogram("KL_divergence", KL)
@@ -154,27 +165,15 @@ class VAE_DCGAN:
 
     def _wasserstein_discriminator_loss(self):
         with tf.name_scope("discriminator_loss"):
-            dis_loss = tf.reduce_mean(self.dis_x - self.dis_x_p)
+            dis_loss = tf.reduce_mean(self.dis_x - self.dis_x_p - self.dis_x_tilde_p)
             tf.summary.scalar("discriminator_loss_mean", dis_loss)
             return dis_loss
 
-    def _wasserstein_decoder_loss(self):
+    def _wasserstein_generator_loss(self):
         with tf.name_scope("decoder_loss"):
-            gen_loss = tf.reduce_mean(self.dis_x_p)
+            gen_loss = tf.reduce_mean(self.dis_x_p + self.dis_x_tilde_p)
             tf.summary.scalar("decoder_loss_mean", gen_loss)
             return gen_loss
-
-    def _adam_optimizer(self, loss, loss_params, learning_rate, beta1=0.5):
-        optimizer = tf.train.AdamOptimizer(learning_rate, beta1=beta1)
-        grads = optimizer.compute_gradients(loss, var_list=loss_params)
-        grads = nn_ops.clip_gradient_norms(grads, 10)
-        train_optimizer = optimizer.apply_gradients(grads)
-        grad_norms = self._l2_norms(grads)
-        tf.summary.histogram("gradient_l2_norms", grad_norms)
-        return train_optimizer
-
-    def _l2_norms(self, gradients):
-        return [tf.nn.l2_loss(g) for g, v in gradients if g is not None]
 
     def _check_tensors(self):
         if tf.trainable_variables():
