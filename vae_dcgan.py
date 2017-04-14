@@ -73,9 +73,9 @@ class VAE_DCGAN:
                 self.generator_loss = self._wasserstein_generator_loss()
                 self.lth_layer_loss = self._lth_layer_loss()
 
-                self.loss_encoder = self.prior + self.lth_layer_loss
-                self.loss_generator = self.lth_layer_loss + self.generator_loss
-                self.loss_discriminator = self.discriminator_loss
+                self.loss_encoder = tf.clip_by_value(self.prior, -100, 100)
+                self.loss_generator = tf.clip_by_value(self.generator_loss, -100, 100)
+                self.loss_discriminator = tf.clip_by_value(self.discriminator_loss, -100, 100)
 
                 train_variables = tf.trainable_variables()
                 self.encoder_vars = [var for var in train_variables if "encoder" in var.name]
@@ -173,7 +173,7 @@ class VAE_DCGAN:
     def _kl_divergence(self):
         with tf.name_scope("kl_divergence_loss"):
             KL = tf.reduce_sum((-self.z_x_log_sigma + 0.5 * (tf.exp(2.0 * self.z_x_log_sigma) + tf.square(self.z_x_mean)) - 0.5), axis=-1)
-            KL_mean = tf.reduce_mean(tf.clip_by_value(KL, -500, 500))
+            KL_mean = tf.reduce_mean(KL)
             tf.summary.histogram("KL_divergence", KL)
             tf.summary.scalar("kl_divergence_mean", KL_mean)
             return KL_mean
