@@ -129,9 +129,8 @@ class VAE_DCGAN:
         conv2 = nn_ops.conv2d_contrib(conv1, 128, kernel=3, stride=2, activation_fn=nn_ops.relu_batch_norm, scope="conv2")
         conv3 = nn_ops.conv2d_contrib(conv2, 256, kernel=3, stride=2, padding="VALID", activation_fn=nn_ops.relu_batch_norm, scope="conv3")
         flatten = nn_ops.flatten_contrib(conv3)
-        fc = nn_ops.linear_contrib(flatten, 2 * self.z_size, activation_fn=None, scope="fully_connected")
-        z_mean = fc[:, :self.z_size]
-        z_log_sigma = fc[:, self.z_size:]
+        z_mean = nn_ops.linear_contrib(flatten, self.z_size, activation_fn=None, scope="fully_connected")
+        z_log_sigma = nn_ops.linear_contrib(flatten, self.z_size, activation_fn=None, scope="fully_connected")
         return z_mean, z_log_sigma
 
     def _discriminator(self, x):
@@ -210,6 +209,26 @@ class VAE_DCGAN:
     def _wasserstein_generator_loss(self):
         """ https://github.com/igul222/improved_wgan_training/blob/master/gan_mnist.py """
         with tf.name_scope("wasserstein_generator_loss"):
+            gen_loss = -tf.reduce_mean(self.dis_x_p) - tf.reduce_mean(self.dis_x_tilde_p)
+            tf.summary.scalar("generator_loss_mean", gen_loss)
+            return gen_loss
+
+    def _wasserstein_gradient_penalty_discriminator_loss(self):
+        """ https://github.com/igul222/improved_wgan_training/blob/master/gan_mnist.py """
+        with tf.name_scope("wasserstein_gradient_penalty_discriminator_loss"):
+            dis_loss = -tf.reduce_mean(self.dis_x) + tf.reduce_mean(self.dis_x_p) + tf.reduce_mean(self.dis_x_tilde_p)
+            differences = self.dis_x_p - self.dis_x
+            interpolates = self.dis_x + (tf.random_uniform([self.batch_size, 1], minval=0, maxval=1) * differences)
+            gradients = tf.gradients(self._discriminator(interpolates), [interpolates])[0]
+            slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1]))
+            gradient_penalty = tf.reduce_mean((slopes - 1.) ** 2)
+            dis_loss += 10 * gradient_penalty
+            tf.summary.scalar("discriminator_loss_mean", dis_loss)
+            return dis_loss
+
+    def _wasserstein_gradient_penalty_generator_loss(self):
+        """ https://github.com/igul222/improved_wgan_training/blob/master/gan_mnist.py """
+        with tf.name_scope("wasserstein_gradient_penalty_generator_loss"):
             gen_loss = -tf.reduce_mean(self.dis_x_p) - tf.reduce_mean(self.dis_x_tilde_p)
             tf.summary.scalar("generator_loss_mean", gen_loss)
             return gen_loss
