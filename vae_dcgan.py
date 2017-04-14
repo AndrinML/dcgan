@@ -69,8 +69,8 @@ class VAE_DCGAN:
             with tf.variable_scope("losses"):
                 self.prior = self._kl_divergence()
 
-                self.discriminator_loss = self._wasserstein_discriminator_loss()
-                self.generator_loss = self._wasserstein_generator_loss()
+                self.discriminator_loss = self._wasserstein_gradient_penalty_discriminator_loss()
+                self.generator_loss = self._wasserstein_gradient_penalty_generator_loss()
                 self.lth_layer_loss = self._lth_layer_loss()
 
                 self.loss_encoder = self.prior + self.lth_layer_loss
@@ -139,6 +139,7 @@ class VAE_DCGAN:
         conv2 = nn_ops.conv2d_contrib(conv1, 128, kernel=3, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="conv2")
         conv3 = nn_ops.conv2d_contrib(conv2, 256, kernel=3, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="conv3")
         conv4 = nn_ops.conv2d_contrib(conv3, 256, kernel=3, stride=2, padding="VALID", activation_fn=None, scope="conv4")
+        conv4 = nn_ops.flatten_contrib(conv4)
         fc = nn_ops.linear_contrib(conv4, 512, activation_fn=None, scope="fully_connected")
         predicted = nn_ops.linear_contrib(fc, 1, activation_fn=tf.nn.sigmoid, scope="prediction")
         net = {"conv1": conv1, "conv2": conv2, "conv3": conv3, "conv4": conv4}
@@ -215,9 +216,12 @@ class VAE_DCGAN:
         """ https://github.com/igul222/improved_wgan_training/blob/master/gan_mnist.py """
         with tf.name_scope("wasserstein_gradient_penalty_discriminator_loss"):
             dis_loss = -tf.reduce_mean(self.dis_x) + tf.reduce_mean(self.dis_x_p) + tf.reduce_mean(self.dis_x_tilde_p)
-            differences = self.dis_x_p - self.dis_x
-            interpolates = self.dis_x + (tf.random_uniform([self.batch_size, 1], minval=0, maxval=1) * differences)
-            gradients = tf.gradients(self._discriminator(interpolates), [interpolates])[0]
+            x_p = tf.reshape(self.x_p, [self.batch_size, -1])
+            x = tf.reshape(self.x, [self.batch_size, -1])
+            differences = x_p - x
+            interpolates = x + (tf.random_uniform([self.batch_size, 1], minval=0, maxval=1) * differences)
+            dis_interpolates, _ = self._discriminator(interpolates)
+            gradients = tf.gradients(dis_interpolates, [interpolates])[0]
             slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1]))
             gradient_penalty = tf.reduce_mean((slopes - 1.) ** 2)
             dis_loss += 10 * gradient_penalty
