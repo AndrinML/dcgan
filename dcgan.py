@@ -33,12 +33,8 @@ class DCGAN:
                 self.generated_samples = self._generator(self.z)
 
             with tf.variable_scope("discriminator"):
-                self.dis_x, dis_net = self._discriminator(self.x)
+                self.dis_x, _ = self._discriminator(self.x)
                 tf.summary.histogram("predicted_x_values", self.dis_x)
-
-                # summary for training discriminator
-                for layer in dis_net:
-                    tf.summary.histogram(layer + "_activations", dis_net[layer])
 
             with tf.variable_scope("discriminator", reuse=True):
                 self.dis_x_pred, _ = self._discriminator(self.generated_samples)
