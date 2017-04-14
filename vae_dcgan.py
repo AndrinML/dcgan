@@ -200,14 +200,14 @@ class VAE_DCGAN:
     def _wasserstein_discriminator_loss(self):
         """ https://github.com/igul222/improved_wgan_training/blob/master/gan_mnist.py """
         with tf.name_scope("wasserstein_discriminator_loss"):
-            dis_loss = -tf.reduce_mean(self.dis_x) + tf.reduce_mean(self.dis_x_p) + tf.reduce_mean(self.dis_x_tilde_p)
+            dis_loss = -tf.reduce_mean(self.dis_x) + tf.reduce_mean(self.dis_x_p)
             tf.summary.scalar("discriminator_loss_mean", dis_loss)
             return dis_loss
 
     def _wasserstein_generator_loss(self):
         """ https://github.com/igul222/improved_wgan_training/blob/master/gan_mnist.py """
         with tf.name_scope("wasserstein_generator_loss"):
-            gen_loss = -tf.reduce_mean(self.dis_x_p) - tf.reduce_mean(self.dis_x_tilde_p)
+            gen_loss = -tf.reduce_mean(self.dis_x_p)
             tf.summary.scalar("generator_loss_mean", gen_loss)
             return gen_loss
 
