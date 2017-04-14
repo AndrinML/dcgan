@@ -156,7 +156,7 @@ class VAE_DCGAN:
         return tf.nn.tanh(deconv4)  # tf.divide(tf.constant(1.0), tf.add(tf.constant(0.5), tf.exp(tf.add(tf.constant(2.0), tf.multiply(tf.constant(-6.0), deconv4)))))
 
     def _discriminator_loss(self, eps=1e-8):
-        with tf.name_scope("discriminator_loss"):
+        with tf.name_scope("logits_discriminator_loss"):
             dis_loss = tf.reduce_mean(-1.0 * tf.log(tf.clip_by_value(self.dis_x, eps, 1.0)) -
                                       tf.log(tf.clip_by_value(1.0 - self.dis_x_p, eps, 1.0)) -
                                       tf.log(tf.clip_by_value(1.0 - self.dis_x_tilde_p, eps, 1.0)))
@@ -164,7 +164,7 @@ class VAE_DCGAN:
             return dis_loss
 
     def _generator_loss(self, eps=1e-8):
-        with tf.name_scope("generator_loss"):
+        with tf.name_scope("logits_generator_loss"):
             gen_loss = tf.reduce_mean(-1.0 * tf.log(tf.clip_by_value(self.dis_x_p, eps, 1.0)) -
                                       tf.log(tf.clip_by_value(self.dis_x_tilde_p, eps, 1.0)))
             tf.summary.scalar("generator_loss_mean", gen_loss)
@@ -185,7 +185,7 @@ class VAE_DCGAN:
             return lth_layer_loss
 
     def _discriminator_binary_cross_entropy_loss(self):
-        with tf.name_scope("discriminator_loss"):
+        with tf.name_scope("cross_entropy_discriminator_loss"):
             d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.dis_x, labels=tf.ones_like(self.dis_x)))
             d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.dis_x_p, labels=tf.zeros_like(self.dis_x_p)))
             dis_loss = d_loss_real + d_loss_fake
@@ -193,21 +193,21 @@ class VAE_DCGAN:
             return dis_loss
 
     def _generator_binary_cross_entropy_loss(self):
-        with tf.name_scope("generator_loss"):
+        with tf.name_scope("cross_entropy_generator_loss"):
             gen_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.dis_x_p, labels=tf.ones_like(self.dis_x_p)))
             tf.summary.scalar("generator_loss_mean", gen_loss)
             return gen_loss
 
     def _wasserstein_discriminator_loss(self):
         """ https://github.com/igul222/improved_wgan_training/blob/master/gan_mnist.py """
-        with tf.name_scope("discriminator_loss"):
+        with tf.name_scope("wasserstein_discriminator_loss"):
             dis_loss = -tf.reduce_mean(self.dis_x) + tf.reduce_mean(self.dis_x_p) + tf.reduce_mean(self.dis_x_tilde_p)
             tf.summary.scalar("discriminator_loss_mean", dis_loss)
             return dis_loss
 
     def _wasserstein_generator_loss(self):
         """ https://github.com/igul222/improved_wgan_training/blob/master/gan_mnist.py """
-        with tf.name_scope("generator_loss"):
+        with tf.name_scope("wasserstein_generator_loss"):
             gen_loss = -tf.reduce_mean(self.dis_x_p) - tf.reduce_mean(self.dis_x_tilde_p)
             tf.summary.scalar("generator_loss_mean", gen_loss)
             return gen_loss
