@@ -73,8 +73,8 @@ class VAE_DCGAN:
                 self.generator_loss = self._wasserstein_generator_loss()
                 self.lth_layer_loss = self._lth_layer_loss()
 
-                self.loss_encoder = tf.clip_by_value(self.prior, -100, 100)
-                self.loss_generator = tf.clip_by_value(self.generator_loss, -100, 100)
+                self.loss_encoder = tf.clip_by_value(self.prior + self.lth_layer_loss, -100, 100)
+                self.loss_generator = tf.clip_by_value(self.lth_layer_loss + self.generator_loss, -100, 100)
                 self.loss_discriminator = tf.clip_by_value(self.discriminator_loss, -100, 100)
 
                 train_variables = tf.trainable_variables()
