@@ -69,8 +69,8 @@ class VAE_DCGAN:
             with tf.variable_scope("losses"):
                 self.prior = self._kl_divergence()
 
-                self.discriminator_loss = self._wasserstein_discriminator_loss()
-                self.generator_loss = self._wasserstein_generator_loss()
+                self.discriminator_loss = self._wasserstein_gradient_penalty_discriminator_loss()
+                self.generator_loss = self._wasserstein_gradient_penalty_generator_loss()
                 self.lth_layer_loss = self._lth_layer_loss()
 
                 self.loss_encoder = self.prior + self.lth_layer_loss
