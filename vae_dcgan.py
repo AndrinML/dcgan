@@ -69,8 +69,8 @@ class VAE_DCGAN:
             with tf.variable_scope("losses"):
                 self.prior = self._kl_divergence()
 
-                self.discriminator_loss = self._wasserstein_gradient_penalty_discriminator_loss()
-                self.generator_loss = self._wasserstein_gradient_penalty_generator_loss()
+                self.discriminator_loss = self._wasserstein_discriminator_loss()
+                self.generator_loss = self._wasserstein_generator_loss()
                 self.lth_layer_loss = self._lth_layer_loss()
 
                 self.loss_encoder = self.prior + self.lth_layer_loss
@@ -143,7 +143,7 @@ class VAE_DCGAN:
         fc = nn_ops.linear_contrib(conv4, 512, activation_fn=None, scope="fully_connected")
         predicted = nn_ops.linear_contrib(fc, 1, activation_fn=tf.nn.sigmoid, scope="prediction")
         net = {"conv1": conv1, "conv2": conv2, "conv3": conv3, "conv4": conv4}
-        return predicted, tf.nn.relu(net["conv4"])
+        return predicted, net["conv3"]
 
     def _generator(self, z):
         fc = nn_ops.linear_contrib(z, 4 * 4 * 1024, activation_fn=None)
@@ -201,14 +201,14 @@ class VAE_DCGAN:
     def _wasserstein_discriminator_loss(self):
         """ https://github.com/igul222/improved_wgan_training/blob/master/gan_mnist.py """
         with tf.name_scope("wasserstein_discriminator_loss"):
-            dis_loss = -tf.reduce_mean(self.dis_x) + tf.reduce_mean(self.dis_x_p)
+            dis_loss = -tf.reduce_mean(self.dis_x) + tf.reduce_mean(self.dis_x_p) + tf.reduce_mean(self.dis_x_tilde_p)
             tf.summary.scalar("discriminator_loss_mean", dis_loss)
             return dis_loss
 
     def _wasserstein_generator_loss(self):
         """ https://github.com/igul222/improved_wgan_training/blob/master/gan_mnist.py """
         with tf.name_scope("wasserstein_generator_loss"):
-            gen_loss = -tf.reduce_mean(self.dis_x_p)
+            gen_loss = -tf.reduce_mean(self.dis_x_p) - tf.reduce_mean(self.dis_x_tilde_p)
             tf.summary.scalar("generator_loss_mean", gen_loss)
             return gen_loss
 
