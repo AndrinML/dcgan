@@ -150,8 +150,8 @@ class VAE_DCGAN:
         return predicted, [net["conv1"], net["conv2"], net["fc"]]
 
     def _generator(self, z):
-        fc = nn_ops.linear_contrib(z, 4 * 4 * 1024, activation_fn=None)
-        z = tf.reshape(fc, shape=(tf.shape(z)[0], 4, 4, 1024))
+        fc = nn_ops.linear_contrib(z, 4 * 4 * 512, activation_fn=None)
+        z = tf.reshape(fc, shape=(tf.shape(z)[0], 4, 4, 512))
         deconv1 = nn_ops.conv2d_transpose_contrib(z, 512, kernel=4, stride=2, activation_fn=nn_ops.relu_batch_norm, scope="upconv1")
         deconv2 = nn_ops.conv2d_transpose_contrib(deconv1, 256, kernel=5, stride=2, activation_fn=nn_ops.relu_batch_norm, scope="upconv2")
         deconv3 = nn_ops.conv2d_transpose_contrib(deconv2, 128, kernel=5, stride=2, activation_fn=nn_ops.relu_batch_norm, scope="upconv3")
