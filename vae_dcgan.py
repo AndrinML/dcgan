@@ -249,7 +249,7 @@ class VAE_DCGAN:
 
     def _vgg_feature_loss(self):
         with tf.name_scope("feature_loss_vgg"):
-            feature_layers = ["relu3_4"]
+            feature_layers = ["relu3_3"]
             # [0.22591736, 0.77408264]
             # [0.09079630, 0.33333333, 0.57587037]
             # [0.04912966, 0.16162175, 0.33837825, 0.45087034]
