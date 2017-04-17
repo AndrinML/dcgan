@@ -72,8 +72,10 @@ class VAE_DCGAN:
                 self.discriminator_loss = self._wasserstein_gradient_penalty_discriminator_loss()
                 self.generator_loss = self._wasserstein_gradient_penalty_generator_loss()
                 self.lth_layer_loss = self._lth_layer_loss()
+                self.mse_loss = self._pixel_loss()
+                #self.feature_loss = self._vgg_feature_loss()
 
-                self.dissimilarity_loss = self.lth_layer_loss
+                self.dissimilarity_loss = self.lth_layer_loss + self.mse_loss
 
                 self.loss_encoder = self.prior + self.dissimilarity_loss
                 self.loss_generator = self.dissimilarity_loss + self.generator_loss
