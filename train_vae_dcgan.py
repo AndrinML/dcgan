@@ -58,7 +58,7 @@ def main(_):
             for images in train_data.next_batch(FLAGS.batch_size):
                 kl, d_loss, g_loss, lth_loss = dcgan_model.update_params(sess, images)
 
-            msg = "epoch: %3d," % epoch + " kl loss %.4f" % kl + ", discriminator loss %.4f" % d_loss + ", generator loss %.4f" % g_loss + ", lth layer loss %.4f" % lth_loss
+            msg = "epoch: %3d," % epoch + " kl loss %.4f" % kl + ", discriminator loss %.4f" % d_loss + ", generator loss %.4f" % g_loss + ", dissimilairty loss %.4f" % lth_loss
             checkpoint_saver.audit_loss(msg)
             checkpoint_saver.audit_time(epoch)
 
