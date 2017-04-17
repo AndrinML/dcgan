@@ -180,7 +180,10 @@ class VAE_DCGAN:
 
     def _lth_layer_loss(self):
         with tf.name_scope("lth_layer_loss"):
-            lth_layer_loss = tf.nn.l2_loss((self.l_x - self.l_x_tilde)) / (self.image_size * self.image_size * self.image_channels)
+            lth_layer_loss = 0
+            for l1, l2 in zip(self.l_x, self.l_x_tilde):
+                lth_layer_loss += tf.nn.l2_loss((l1 - l2)) / (self.image_size * self.image_size * self.image_channels)
+            lth_layer_loss *= 1.0 / len(self.l_x)
             tf.summary.scalar("lth_layer_loss_mean", lth_layer_loss)
             return lth_layer_loss
 
