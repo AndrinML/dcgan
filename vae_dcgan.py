@@ -146,7 +146,7 @@ class VAE_DCGAN:
         conv4 = nn_ops.flatten_contrib(conv4)
         fc = nn_ops.linear_contrib(conv4, 512, activation_fn=None, scope="fully_connected")
         predicted = nn_ops.linear_contrib(fc, 1, activation_fn=tf.nn.sigmoid, scope="prediction")
-        net = {"conv1": conv1, "conv2": conv2, "conv3": conv3, "conv4": conv4}
+        net = {"conv1": conv1, "conv2": conv2, "conv3": conv3, "conv4": conv4, "fc": fc}
         return predicted, [net["conv1"], net["conv2"], net["fc"]]
 
     def _generator(self, z):
