@@ -73,8 +73,10 @@ class VAE_DCGAN:
                 self.generator_loss = self._wasserstein_gradient_penalty_generator_loss()
                 self.lth_layer_loss = self._lth_layer_loss()
 
-                self.loss_encoder = self.prior + self.lth_layer_loss
-                self.loss_generator = self.lth_layer_loss + self.generator_loss
+                self.dissimilarity_loss = self.lth_layer_loss
+
+                self.loss_encoder = self.prior + self.dissimilarity_loss
+                self.loss_generator = self.dissimilarity_loss + self.generator_loss
                 self.loss_discriminator = self.discriminator_loss
 
                 train_variables = tf.trainable_variables()
@@ -285,7 +287,7 @@ class VAE_DCGAN:
     def update_params(self, sess, input_tensor):
         _, _, _ = sess.run([self.e_optim, self.g_optim, self.d_optim], feed_dict={self.x: input_tensor})
 
-        kl, d_loss, g_loss, lth_layer = sess.run([self.prior, self.discriminator_loss, self.generator_loss, self.lth_layer_loss], feed_dict={self.x: input_tensor})
+        kl, d_loss, g_loss, lth_layer = sess.run([self.prior, self.discriminator_loss, self.generator_loss, self.dissimilarity_loss], feed_dict={self.x: input_tensor})
         return kl, d_loss, g_loss, lth_layer
 
     def generate_samples(self, sess, num_samples):
