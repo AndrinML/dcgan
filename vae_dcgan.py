@@ -182,7 +182,7 @@ class VAE_DCGAN:
 
     def _pixel_loss(self):
         with tf.name_scope("pixel_loss"):
-            pixel_loss = tf.reduce_mean(tf.reduce_sum(nn_ops.binary_crossentropy(self.x, self.x_tilde), 1))
+            pixel_loss = tf.reduce_mean(tf.nn.l2_loss(self.x - self.x_tilde) / np.prod(self.x.get_shape().as_list()[1:]))
             pixel_loss_weighted = 1.0 * pixel_loss
             tf.summary.scalar("pixel_loss_mean", pixel_loss_weighted)
             return pixel_loss_weighted
