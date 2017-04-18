@@ -156,8 +156,7 @@ class VAE_DCGAN:
         deconv2 = nn_ops.conv2d_transpose_contrib(deconv1, 256, kernel=5, stride=2, activation_fn=nn_ops.relu_batch_norm, scope="upconv2")
         deconv3 = nn_ops.conv2d_transpose_contrib(deconv2, 128, kernel=5, stride=2, activation_fn=nn_ops.relu_batch_norm, scope="upconv3")
         deconv4 = nn_ops.conv2d_transpose_contrib(deconv3, self.image_channels, kernel=5, stride=2, activation_fn=None, scope="upconv4")
-        # map to [0,2] with shifted and scaled sigmoid: 1 / (0.5 + exp(2.0 - 6 * x))
-        return tf.nn.tanh(deconv4)  # tf.divide(tf.constant(1.0), tf.add(tf.constant(0.5), tf.exp(tf.add(tf.constant(2.0), tf.multiply(tf.constant(-6.0), deconv4)))))
+        return tf.nn.tanh(deconv4)
 
     def _discriminator_loss(self, eps=1e-8):
         with tf.name_scope("logits_discriminator_loss"):
