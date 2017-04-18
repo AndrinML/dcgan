@@ -75,7 +75,7 @@ class VAE_DCGAN:
                 self.mse_loss = self._pixel_loss()
                 #self.feature_loss = self._vgg_feature_loss()
 
-                self.dissimilarity_loss = 0.5 * self.lth_layer_loss + 0.5 * self.mse_loss
+                self.dissimilarity_loss = self.lth_layer_loss + self.mse_loss
 
                 self.loss_encoder = self.prior + self.dissimilarity_loss
                 self.loss_generator = self.dissimilarity_loss + self.generator_loss
