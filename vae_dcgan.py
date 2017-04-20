@@ -103,7 +103,7 @@ class VAE_DCGAN:
     def _adam_optimizer(self, loss, loss_params, learning_rate, beta1=0.5):
         optimizer = tf.train.AdamOptimizer(learning_rate, beta1=beta1)
         grads = optimizer.compute_gradients(loss, var_list=loss_params)
-        grads = nn_ops.clip_gradient_norms(grads, 10)
+        #grads = nn_ops.clip_gradient_norms(grads, 10)
         train_optimizer = optimizer.apply_gradients(grads)
         grad_norms = self._l2_norms(grads)
         tf.summary.histogram("gradient_l2_norms", grad_norms)
@@ -112,7 +112,7 @@ class VAE_DCGAN:
     def _rms_prop_optimizer(self, loss, loss_params, learning_rate):
         optimizer = tf.train.RMSPropOptimizer(learning_rate)
         grads = optimizer.compute_gradients(loss, var_list=loss_params)
-        grads = nn_ops.clip_gradient_norms(grads, 10)
+        #grads = nn_ops.clip_gradient_norms(grads, 10)
         train_optimizer = optimizer.apply_gradients(grads)
         grad_norms = self._l2_norms(grads)
         tf.summary.histogram("gradient_l2_norms", grad_norms)
