@@ -306,9 +306,9 @@ class VAE_DCGAN:
         self.d_current_lr = self.learning_rate_dis * self._sigmoid(np.mean(self.d_fake), -.5, 15)
 
         _, _, _ = sess.run([self.d_optim, self.e_optim, self.g_optim], feed_dict={self.x: input_tensor,
-                                                                                  self.lr_E: self.e_current_lr,
-                                                                                  self.lr_G: self.g_current_lr,
-                                                                                  self.lr_D: self.d_current_lr})
+                                                                                  self.lr_encoder: self.e_current_lr,
+                                                                                  self.lr_generator: self.g_current_lr,
+                                                                                  self.lr_discriminator: self.d_current_lr})
 
         kl, d_loss, g_loss, lth_layer, d_real, d_fake = sess.run([self.prior, self.discriminator_loss, self.generator_loss, self.dissimilarity_loss, self.dis_x, self.dis_x_p], feed_dict={self.x: input_tensor})
 
