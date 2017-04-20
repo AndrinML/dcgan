@@ -21,10 +21,19 @@ class VAE_DCGAN:
         self.image_size = image_size
         self.image_channels = channels
         self.z_size = z_size
+
+        self.d_real = 0.0
+        self.d_fake = 0.0
+
         self.learning_rate_enc = learning_rate_enc
         self.learning_rate_gen = learning_rate_dec
         self.learning_rate_dis = learning_rate_dis
+
         self.eps = 1e-8
+
+        self.lr_discriminator = tf.placeholder(tf.float32, shape=[])
+        self.lr_generator = tf.placeholder(tf.float32, shape=[])
+        self.lr_encoder = tf.placeholder(tf.float32, shape=[])
 
         self.x = tf.placeholder(tf.float32, shape=(None, self.image_size, self.image_size, self.image_channels))
         self.batch_size = tf.shape(self.x)[0]
@@ -87,13 +96,13 @@ class VAE_DCGAN:
                 self.generator_vars = [var for var in train_variables if "generator" in var.name]
 
                 with tf.name_scope("encoder_optimizer"):
-                    self.e_optim = self._adam_optimizer(self.loss_encoder, self.encoder_vars, self.learning_rate_enc)
+                    self.e_optim = self._adam_optimizer(self.loss_encoder, self.encoder_vars, self.lr_encoder)
 
                 with tf.name_scope("discriminator_optimizer"):
-                    self.d_optim = self._rms_prop_optimizer(self.loss_discriminator, self.discriminator_vars, self.learning_rate_dis)
+                    self.d_optim = self._rms_prop_optimizer(self.loss_discriminator, self.discriminator_vars, self.lr_discriminator)
 
                 with tf.name_scope("generator_optimizer"):
-                    self.g_optim = self._rms_prop_optimizer(self.loss_generator, self.generator_vars, self.learning_rate_gen)
+                    self.g_optim = self._rms_prop_optimizer(self.loss_generator, self.generator_vars, self.lr_generator)
 
         # initialize saver
         self.saver = tf.train.Saver([v for v in tf.global_variables() if "vae_dcgan_model" in v.name])
@@ -285,10 +294,27 @@ class VAE_DCGAN:
             for v in tf.trainable_variables():
                 print("%s : %s" % (v.name, v.get_shape()))
 
-    def update_params(self, sess, input_tensor):
-        _, _, _ = sess.run([self.e_optim, self.g_optim, self.d_optim], feed_dict={self.x: input_tensor})
+    def _sigmoid(self, x, shift, mult):
+        """
+        Using this sigmoid to discourage one network overpowering the other
+        """
+        return 1 / (1 + np.exp(-(x + shift) * mult))
 
-        kl, d_loss, g_loss, lth_layer = sess.run([self.prior, self.discriminator_loss, self.generator_loss, self.dissimilarity_loss], feed_dict={self.x: input_tensor})
+    def update_params(self, sess, input_tensor):
+        self.e_current_lr = self.learning_rate_enc * self._sigmoid(np.mean(self.d_real), -.5, 15)
+        self.g_current_lr = self.learning_rate_gen * self._sigmoid(np.mean(self.d_real), -.5, 15)
+        self.d_current_lr = self.learning_rate_dis * self._sigmoid(np.mean(self.d_fake), -.5, 15)
+
+        _, _, _ = sess.run([self.d_optim, self.e_optim, self.g_optim], feed_dict={self.x: input_tensor,
+                                                                                  self.lr_E: self.e_current_lr,
+                                                                                  self.lr_G: self.g_current_lr,
+                                                                                  self.lr_D: self.d_current_lr})
+
+        kl, d_loss, g_loss, lth_layer, d_real, d_fake = sess.run([self.prior, self.discriminator_loss, self.generator_loss, self.dissimilarity_loss, self.dis_x, self.dis_x_p], feed_dict={self.x: input_tensor})
+
+        self.d_real = d_real
+        self.d_fake = d_fake
+
         return kl, d_loss, g_loss, lth_layer
 
     def generate_samples(self, sess, num_samples):
