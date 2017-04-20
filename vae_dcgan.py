@@ -301,21 +301,21 @@ class VAE_DCGAN:
         return 1 / (1 + np.exp(-(x + shift) * mult))
 
     def update_params(self, sess, input_tensor):
-        self.e_current_lr = self.learning_rate_enc * self._sigmoid(np.mean(self.d_real), -.5, 15)
-        self.g_current_lr = self.learning_rate_gen * self._sigmoid(np.mean(self.d_real), -.5, 15)
-        self.d_current_lr = self.learning_rate_dis * self._sigmoid(np.mean(self.d_fake), -.5, 15)
+        e_current_lr = self.learning_rate_enc * self._sigmoid(np.mean(self.d_real), -.5, 15)
+        g_current_lr = self.learning_rate_gen * self._sigmoid(np.mean(self.d_real), -.5, 15)
+        d_current_lr = self.learning_rate_dis * self._sigmoid(np.mean(self.d_fake), -.5, 15)
 
         _, _, _ = sess.run([self.d_optim, self.e_optim, self.g_optim], feed_dict={self.x: input_tensor,
-                                                                                  self.lr_encoder: self.e_current_lr,
-                                                                                  self.lr_generator: self.g_current_lr,
-                                                                                  self.lr_discriminator: self.d_current_lr})
+                                                                                  self.lr_encoder: e_current_lr,
+                                                                                  self.lr_generator: g_current_lr,
+                                                                                  self.lr_discriminator: d_current_lr})
 
         kl, d_loss, g_loss, lth_layer, d_real, d_fake = sess.run([self.prior, self.discriminator_loss, self.generator_loss, self.dissimilarity_loss, self.dis_x, self.dis_x_p], feed_dict={self.x: input_tensor})
 
         self.d_real = d_real
         self.d_fake = d_fake
 
-        return kl, d_loss, g_loss, lth_layer
+        return kl, d_loss, g_loss, lth_layer, e_current_lr, g_current_lr, d_current_lr
 
     def generate_samples(self, sess, num_samples):
         z = np.random.normal(size=(num_samples, self.z_size))
