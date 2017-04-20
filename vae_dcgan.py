@@ -156,7 +156,7 @@ class VAE_DCGAN:
         fc = nn_ops.linear_contrib(conv4, 512, activation_fn=nn_ops.leaky_relu_batch_norm, scope="fully_connected")
         predicted = nn_ops.linear_contrib(fc, 1, activation_fn=tf.nn.sigmoid, scope="prediction")
         net = {"conv1": conv1, "conv2": conv2, "conv3": conv3, "conv4": conv4, "fc": fc}
-        return predicted, [net["conv1"], net["conv2"], net["fc"]]
+        return predicted, [net["conv1"], net["conv3"], net["fc"]]
 
     def _generator(self, z):
         fc = nn_ops.linear_contrib(z, 4 * 4 * 512, activation_fn=None)
