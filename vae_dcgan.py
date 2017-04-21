@@ -301,9 +301,9 @@ class VAE_DCGAN:
         return 1 / (1 + np.exp(-(x + shift) * mult))
 
     def update_params(self, sess, input_tensor):
-        e_current_lr = self.learning_rate_enc * self._sigmoid(np.mean(self.d_real), -.5, 15)
-        g_current_lr = self.learning_rate_gen * self._sigmoid(np.mean(self.d_real), -.5, 15)
-        d_current_lr = self.learning_rate_dis * self._sigmoid(np.mean(self.d_fake), -.5, 15)
+        e_current_lr = self.learning_rate_enc# * self._sigmoid(np.mean(self.d_real), -.5, 15)
+        g_current_lr = self.learning_rate_gen# * self._sigmoid(np.mean(self.d_real), -.5, 15)
+        d_current_lr = self.learning_rate_dis# * self._sigmoid(np.mean(self.d_fake), -.5, 15)
 
         _, _, _ = sess.run([self.d_optim, self.e_optim, self.g_optim], feed_dict={self.x: input_tensor,
                                                                                   self.lr_encoder: e_current_lr,
