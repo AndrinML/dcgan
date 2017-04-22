@@ -151,7 +151,7 @@ class VAE_DCGAN:
         conv1 = nn_ops.conv2d_contrib(x, 64, kernel=5, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="conv1")
         conv2 = nn_ops.conv2d_contrib(conv1, 128, kernel=3, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="conv2")
         conv3 = nn_ops.conv2d_contrib(conv2, 256, kernel=3, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="conv3")
-        conv4 = nn_ops.conv2d_contrib(conv3, 256, kernel=3, stride=2, padding="VALID", activation_fn=None, scope="conv4")
+        conv4 = nn_ops.conv2d_contrib(conv3, 256, kernel=3, stride=2, padding="VALID", activation_fn=nn_ops.leaky_relu_batch_norm, scope="conv4")
         conv4 = nn_ops.flatten_contrib(conv4)
         fc = nn_ops.linear_contrib(conv4, 512, activation_fn=None, scope="fully_connected")
         predicted = nn_ops.linear_contrib(fc, 1, activation_fn=tf.nn.sigmoid, scope="prediction")
