@@ -142,8 +142,8 @@ class VAE_DCGAN:
         conv2 = nn_ops.conv2d_contrib(conv1, 128, kernel=3, stride=2, activation_fn=nn_ops.relu_batch_norm, scope="conv2")
         conv3 = nn_ops.conv2d_contrib(conv2, 256, kernel=3, stride=2, padding="VALID", activation_fn=nn_ops.relu_batch_norm, scope="conv3")
         flatten = nn_ops.flatten_contrib(conv3)
-        z_mean = nn_ops.linear_contrib(flatten, self.z_size, activation_fn=None, scope="fully_connected")
-        z_log_sigma = nn_ops.linear_contrib(flatten, self.z_size, activation_fn=None, scope="fully_connected")
+        z_mean = nn_ops.linear_contrib(flatten, self.z_size, activation_fn=nn_ops.relu_batch_norm, scope="fully_connected")
+        z_log_sigma = nn_ops.linear_contrib(flatten, self.z_size, activation_fn=nn_ops.relu_batch_norm, scope="fully_connected")
         return z_mean, z_log_sigma
 
     def _discriminator(self, x):
@@ -153,7 +153,7 @@ class VAE_DCGAN:
         conv3 = nn_ops.conv2d_contrib(conv2, 256, kernel=3, stride=2, activation_fn=nn_ops.leaky_relu_batch_norm, scope="conv3")
         conv4 = nn_ops.conv2d_contrib(conv3, 256, kernel=3, stride=2, padding="VALID", activation_fn=nn_ops.leaky_relu_batch_norm, scope="conv4")
         conv4 = nn_ops.flatten_contrib(conv4)
-        fc = nn_ops.linear_contrib(conv4, 512, activation_fn=nn_ops.leaky_relu, scope="fully_connected")
+        fc = nn_ops.linear_contrib(conv4, 512, activation_fn=nn_ops.leaky_relu_batch_norm, scope="fully_connected")
         predicted = nn_ops.linear_contrib(fc, 1, activation_fn=tf.nn.sigmoid, scope="prediction")
         net = {"conv1": conv1, "conv2": conv2, "conv3": conv3, "conv4": conv4, "fc": fc}
         return predicted, [net["conv1"], net["conv2"], net["fc"]]
