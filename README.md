@@ -10,4 +10,4 @@ It was proposed in 2015 by [Radford et al.](https://arxiv.org/pdf/1511.06434.pdf
 * Tensorflow (with GPU support) (https://www.tensorflow.org/install/)
 
 ## Result from training on tree silhouettes
-![][images/dcgan_random_samples_200_epochs.png]
+![](images/dcgan_random_samples_200_epochs.png)
