@@ -11,4 +11,4 @@ It was proposed in 2015 by [Radford et al.](https://arxiv.org/pdf/1511.06434.pdf
 
 ## Result from training on tree silhouettes
 ![](images/dcgan_random_samples_200_epochs.png)
-Image depicts randomly generated samples, after 200 epoches of training on training dataset with 15k samples.
+Image depicts randomly generated samples, after 200 epoches of training on dataset with 15k samples.
